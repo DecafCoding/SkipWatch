@@ -1,0 +1,145 @@
+@inject ITopicService TopicService
+@inject IMessageCenterService MessageCenter
+
+<div class="card video-card h-100">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="card-title mb-0 me-2 text-break">@Topic.Name</h6>
+            <div class="form-check form-switch flex-shrink-0" title="Enabled">
+                <input class="form-check-input"
+                       type="checkbox"
+                       role="switch"
+                       checked="@Topic.Enabled"
+                       disabled="@IsBusy"
+                       @onchange="HandleEnabledToggled" />
+            </div>
+        </div>
+
+        <code class="d-block small text-muted mb-2 text-break">@Topic.Query</code>
+
+        <div class="d-flex flex-wrap gap-2 align-items-center small text-muted mb-3">
+            <span title="Search lookback window">
+                <i class="bi bi-calendar-range me-1"></i>@Topic.LookbackDays days
+            </span>
+            <span title="Last polled">
+                <i class="bi bi-clock-history me-1"></i>@Topic.LastCheckedDisplay
+            </span>
+            @if (!string.IsNullOrWhiteSpace(Topic.LastCheckError))
+            {
+                <span class="text-danger" title="@Topic.LastCheckError">
+                    <i class="bi bi-exclamation-triangle me-1"></i>last check failed
+                </span>
+            }
+        </div>
+
+        <button type="button"
+                class="btn btn-outline-danger btn-sm"
+                @onclick="ShowDeleteConfirmation"
+                disabled="@IsBusy"
+                title="Remove topic">
+            @if (IsDeleting)
+            {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+            }
+            else
+            {
+                <i class="bi bi-trash"></i>
+            }
+        </button>
+    </div>
+</div>
+
+@if (ShowDeleteModal)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                        Remove topic
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HideDeleteConfirmation" disabled="@IsDeleting"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Remove <strong>@Topic.Name</strong>?</p>
+                    <p class="text-muted small mb-0">
+                        Future polling stops. Videos discovered through this topic stay in your library; only the provenance row is removed.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideDeleteConfirmation" disabled="@IsDeleting">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete" disabled="@IsDeleting">
+                        @if (IsDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public TopicDto Topic { get; set; } = default!;
+    [Parameter] public EventCallback<int> OnTopicDeleted { get; set; }
+    [Parameter] public EventCallback<(int Id, bool Enabled)> OnTopicEnabledChanged { get; set; }
+
+    private bool ShowDeleteModal;
+    private bool IsDeleting;
+    private bool IsToggling;
+
+    private bool IsBusy => IsDeleting || IsToggling;
+
+    private void ShowDeleteConfirmation() => ShowDeleteModal = true;
+    private void HideDeleteConfirmation() => ShowDeleteModal = false;
+
+    private async Task ConfirmDelete()
+    {
+        IsDeleting = true;
+        try
+        {
+            var ok = await TopicService.RemoveAsync(Topic.Id);
+            if (ok)
+            {
+                await MessageCenter.ShowSuccessAsync($"Removed topic '{Topic.Name}'.");
+                ShowDeleteModal = false;
+                await OnTopicDeleted.InvokeAsync(Topic.Id);
+            }
+            else
+            {
+                await MessageCenter.ShowErrorAsync($"Couldn't remove '{Topic.Name}'.");
+            }
+        }
+        finally
+        {
+            IsDeleting = false;
+        }
+    }
+
+    private async Task HandleEnabledToggled(ChangeEventArgs e)
+    {
+        var newEnabled = e.Value is bool b && b;
+        IsToggling = true;
+        try
+        {
+            var ok = await TopicService.SetEnabledAsync(Topic.Id, newEnabled);
+            if (ok)
+            {
+                await OnTopicEnabledChanged.InvokeAsync((Topic.Id, newEnabled));
+                await MessageCenter.ShowInfoAsync(
+                    newEnabled ? $"Enabled topic '{Topic.Name}'." : $"Paused topic '{Topic.Name}'.");
+            }
+            else
+            {
+                await MessageCenter.ShowErrorAsync($"Couldn't update '{Topic.Name}'.");
+            }
+        }
+        finally
+        {
+            IsToggling = false;
+        }
+    }
+}

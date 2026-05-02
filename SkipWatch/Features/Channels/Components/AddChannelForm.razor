@@ -1,0 +1,80 @@
+@inject IChannelService ChannelService
+@inject IMessageCenterService MessageCenter
+
+<div class="card">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Add a channel</h6>
+    </div>
+    <div class="card-body">
+        <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="input-group">
+                <InputText @bind-Value="Model.Input"
+                           class="form-control"
+                           placeholder="Channel handle, URL, or UC… ID"
+                           disabled="@IsBusy" />
+                <button type="submit"
+                        class="btn btn-primary"
+                        disabled="@IsBusy">
+                    @if (IsBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-plus-lg"></i>
+                    }
+                    <span class="ms-1">Add</span>
+                </button>
+            </div>
+            <div class="form-text">
+                Paste a YouTube channel URL, an <code>@@handle</code>, or a canonical <code>UC…</code> ID.
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnChannelAdded { get; set; }
+
+    private AddInputModel Model = new();
+    private bool IsBusy;
+
+    private async Task HandleSubmit()
+    {
+        IsBusy = true;
+        try
+        {
+            var result = await ChannelService.AddAsync(Model.Input ?? string.Empty);
+
+            if (result.Success && result.Channel is not null)
+            {
+                await MessageCenter.ShowSuccessAsync($"Added '{result.Channel.Title}'.");
+                Model = new AddInputModel();
+                await OnChannelAdded.InvokeAsync();
+            }
+            else if (result.IsDuplicate)
+            {
+                await MessageCenter.ShowWarningAsync(result.ErrorMessage ?? "Already tracking that channel.");
+            }
+            else if (result.IsQuotaExceeded)
+            {
+                await MessageCenter.ShowApiLimitAsync("YouTube Data API", DateTime.UtcNow.Date.AddDays(1));
+            }
+            else
+            {
+                await MessageCenter.ShowErrorAsync(result.ErrorMessage ?? "Couldn't add that channel.");
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private sealed class AddInputModel
+    {
+        public string? Input { get; set; }
+    }
+}

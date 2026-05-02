@@ -1,0 +1,27 @@
+@using SkipWatch.Components.Shared
+@inherits LayoutComponentBase
+
+<div class="page">
+    <header>
+        <NavMenu />
+    </header>
+
+    <main class="main-content">
+        <div class="container-fluid px-4 py-3">
+            <div class="row">
+                <aside class="col-lg-3 col-md-4 sidebar-content order-md-1 order-2">
+                    <MessageSidebar />
+                </aside>
+                <section class="col-lg-9 col-md-8 order-md-2 order-1">
+                    @Body
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

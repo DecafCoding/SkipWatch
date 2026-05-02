@@ -1,0 +1,15 @@
+@page "/channels"
+@rendermode InteractiveServer
+
+<PageTitle>Channels - SkipWatch</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Channels</h3>
+    <small class="text-muted">@TrackedCount tracked</small>
+</div>
+
+<AddChannelForm OnChannelAdded="HandleChannelAdded" />
+
+<div class="mt-4">
+    <ChannelList @ref="ChannelListComponent" OnChannelsChanged="HandleChannelsChanged" />
+</div>

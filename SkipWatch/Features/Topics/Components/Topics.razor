@@ -1,0 +1,15 @@
+@page "/topics"
+@rendermode InteractiveServer
+
+<PageTitle>Topics - SkipWatch</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Topics</h3>
+    <small class="text-muted">@TrackedCount tracked</small>
+</div>
+
+<AddTopicForm OnTopicAdded="HandleTopicAdded" />
+
+<div class="mt-4">
+    <TopicList @ref="TopicListComponent" OnTopicsChanged="HandleTopicsChanged" />
+</div>

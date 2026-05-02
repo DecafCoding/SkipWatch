@@ -1,0 +1,118 @@
+@inject ITopicService TopicService
+@inject IMessageCenterService MessageCenter
+
+<div class="card">
+    <div class="card-header">
+        <h6 class="card-title mb-0">Add a topic</h6>
+    </div>
+    <div class="card-body">
+        <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="topicName" class="form-label">Name</label>
+                    <InputText @bind-Value="Model.Name"
+                               id="topicName"
+                               class="form-control"
+                               placeholder="Postgres internals"
+                               disabled="@IsBusy" />
+                </div>
+                <div class="col-md-6">
+                    <label for="topicQuery" class="form-label">Search query</label>
+                    <InputText @bind-Value="Model.Query"
+                               id="topicQuery"
+                               class="form-control font-monospace"
+                               placeholder="postgres internals -shorts"
+                               disabled="@IsBusy" />
+                </div>
+                <div class="col-md-2">
+                    <label for="topicLookback" class="form-label">Lookback</label>
+                    <div class="dropdown d-grid">
+                        <button id="topicLookback"
+                                class="btn btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                disabled="@IsBusy">
+                            @Model.LookbackDays days
+                        </button>
+                        <ul class="dropdown-menu w-100">
+                            @foreach (var option in LookbackOptions)
+                            {
+                                <li>
+                                    <button class="dropdown-item" type="button"
+                                            @onclick="() => Model.LookbackDays = option">
+                                        @option days
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="form-text mb-0">
+                    Query supports YouTube search operators (e.g. <code>-shorts</code>, quoted phrases).
+                </div>
+                <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                    @if (IsBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-plus-lg me-1"></i>
+                    }
+                    Add topic
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnTopicAdded { get; set; }
+
+    private static readonly int[] LookbackOptions = [3, 7, 14, 30, 60, 90];
+    private AddTopicInputModel Model = new();
+    private bool IsBusy;
+
+    private async Task HandleSubmit()
+    {
+        IsBusy = true;
+        try
+        {
+            var result = await TopicService.AddAsync(
+                Model.Name ?? string.Empty,
+                Model.Query ?? string.Empty,
+                Model.LookbackDays);
+
+            if (result.Success && result.Topic is not null)
+            {
+                await MessageCenter.ShowSuccessAsync($"Added topic '{result.Topic.Name}'.");
+                Model = new AddTopicInputModel();
+                await OnTopicAdded.InvokeAsync();
+            }
+            else if (result.IsDuplicate)
+            {
+                await MessageCenter.ShowWarningAsync(result.ErrorMessage ?? "That topic already exists.");
+            }
+            else
+            {
+                await MessageCenter.ShowErrorAsync(result.ErrorMessage ?? "Couldn't add that topic.");
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private sealed class AddTopicInputModel
+    {
+        public string? Name { get; set; }
+        public string? Query { get; set; }
+        public int LookbackDays { get; set; } = 7;
+    }
+}

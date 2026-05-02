@@ -1,0 +1,120 @@
+@using Microsoft.AspNetCore.Http
+@using SkipWatch.Services.Interfaces
+@inject IThemeService ThemeService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="dropdown-submenu">
+    <h6 class="dropdown-header">
+        <i class="@GetCurrentThemeIcon() me-2"></i>
+        Theme
+    </h6>
+
+    @foreach (var theme in _themes)
+    {
+        @* Inline onclick uses the global skipwatchSetTheme helper from App.razor — works on
+           SSR pages where Blazor interactivity isn't wired up. *@
+        <button class="dropdown-item d-flex align-items-center @(theme.Value == _currentTheme ? "active" : "")"
+                type="button"
+                onclick="skipwatchSetTheme('@theme.Value')">
+            <i class="@theme.Icon me-2"></i>
+            @theme.Name
+            @if (theme.Value == _currentTheme)
+            {
+                <i class="bi bi-check ms-auto"></i>
+            }
+        </button>
+    }
+</div>
+
+@code {
+    private string _currentTheme = "dark";
+    private DotNetObjectReference<ThemeSelector>? _selfRef;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private readonly List<ThemeOption> _themes = new()
+    {
+        new("Light", "light", "bi-sun-fill"),
+        new("Dark", "dark", "bi-moon-fill")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpContext?.Request.Cookies.TryGetValue("skipwatch-theme", out var cookieTheme) == true
+            && !string.IsNullOrEmpty(cookieTheme))
+        {
+            _currentTheme = cookieTheme == "light" ? "light" : "dark";
+        }
+        else
+        {
+            _currentTheme = await ThemeService.GetThemeAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var actualTheme = await ThemeService.GetThemeAsync();
+            if (actualTheme != _currentTheme)
+            {
+                _currentTheme = actualTheme;
+                StateHasChanged();
+            }
+
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("skipwatchRegisterThemeListener", _selfRef);
+        }
+    }
+
+    [JSInvokable]
+    public void OnThemeChangedFromJs(string newTheme)
+    {
+        _currentTheme = newTheme == "light" ? "light" : "dark";
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string GetCurrentThemeIcon() =>
+        _themes.FirstOrDefault(t => t.Value == _currentTheme)?.Icon ?? "bi-moon-fill";
+
+    public void Dispose()
+    {
+        _selfRef?.Dispose();
+    }
+
+    private record ThemeOption(string Name, string Value, string Icon);
+}
+
+<style>
+    .dropdown-submenu .dropdown-header {
+        font-size: 0.875rem;
+        color: var(--bs-secondary);
+        padding: 0.25rem 1rem;
+        margin-bottom: 0.25rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .dropdown-submenu .dropdown-item {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.875rem;
+        transition: all 0.15s ease-in-out;
+    }
+
+        .dropdown-submenu .dropdown-item:hover {
+            background-color: var(--bs-secondary-bg);
+            transform: translateX(2px);
+        }
+
+        .dropdown-submenu .dropdown-item.active {
+            background-color: var(--bs-primary-bg-subtle);
+            color: var(--bs-primary-text-emphasis);
+            font-weight: 500;
+        }
+
+        .dropdown-submenu .dropdown-item i:last-child {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+</style>

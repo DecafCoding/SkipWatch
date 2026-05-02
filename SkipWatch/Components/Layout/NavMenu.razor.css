@@ -1,0 +1,30 @@
+.navbar {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.navbar-nav {
+    align-items: center;
+}
+
+.nav-item {
+    font-size: 0.95rem;
+    margin-right: 4px;
+}
+
+    .nav-item:last-of-type {
+        margin-right: 0;
+    }
+
+.navbar .dropdown-menu {
+    padding: 4px 0 !important;
+}
+
+    .navbar .dropdown-menu .dropdown-item {
+        margin-bottom: 4px !important;
+        padding: 6px 16px !important;
+    }
+
+        .navbar .dropdown-menu .dropdown-item:last-child {
+            margin-bottom: 0 !important;
+        }

@@ -1,0 +1,70 @@
+@inject IChannelService ChannelService
+
+@if (IsLoading)
+{
+    <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading channels...</span>
+        </div>
+    </div>
+}
+else if (Channels.Count == 0)
+{
+    <div class="card">
+        <div class="card-body text-center py-4">
+            <i class="bi bi-broadcast text-muted" style="font-size: 2.5rem;"></i>
+            <h6 class="mt-3 text-muted mb-1">No channels yet</h6>
+            <p class="text-muted small mb-0">Add one above to start polling its uploads.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var channel in Channels)
+        {
+            <div class="col-lg-4 col-md-6">
+                <ChannelCard Channel="@channel" OnChannelDeleted="HandleChannelDeleted" />
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public EventCallback<int> OnChannelsChanged { get; set; }
+
+    private List<ChannelDto> Channels { get; set; } = new();
+    private bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    public async Task RefreshAsync()
+    {
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            Channels = await ChannelService.GetAllAsync();
+            await OnChannelsChanged.InvokeAsync(Channels.Count);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task HandleChannelDeleted(int channelId)
+    {
+        Channels = Channels.Where(c => c.Id != channelId).ToList();
+        await OnChannelsChanged.InvokeAsync(Channels.Count);
+        StateHasChanged();
+    }
+}

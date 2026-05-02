@@ -1,0 +1,132 @@
+@inject IChannelService ChannelService
+@inject IMessageCenterService MessageCenter
+
+<div class="card video-card h-100">
+    <div class="card-body d-flex p-3">
+        <div class="position-relative me-3 flex-shrink-0">
+            @if (!string.IsNullOrEmpty(Channel.ThumbnailUrl))
+            {
+                <img src="@Channel.ThumbnailUrl"
+                     class="rounded"
+                     alt="@Channel.Title thumbnail"
+                     loading="lazy"
+                     style="width: 64px; height: 64px; object-fit: cover;" />
+            }
+            else
+            {
+                <div class="d-flex align-items-center justify-content-center bg-secondary rounded"
+                     style="width: 64px; height: 64px;">
+                    <i class="bi bi-person-circle text-white" style="font-size: 1.75rem;"></i>
+                </div>
+            }
+        </div>
+
+        <div class="flex-grow-1 d-flex flex-column">
+            <h6 class="card-title mb-1">
+                <a href="@Channel.YouTubeUrl"
+                   target="_blank"
+                   class="text-decoration-none"
+                   title="@Channel.Title">
+                    @Channel.Title
+                    <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                </a>
+            </h6>
+            @if (!string.IsNullOrWhiteSpace(Channel.Handle))
+            {
+                <small class="text-muted mb-2">@Channel.Handle</small>
+            }
+            <small class="text-muted mt-auto">
+                <i class="bi bi-clock-history me-1"></i>@Channel.LastCheckedDisplay
+            </small>
+        </div>
+    </div>
+
+    <div class="card-body pt-0 px-3 pb-3">
+        <div class="d-flex gap-2">
+            <a href="@Channel.YouTubeUrl"
+               target="_blank"
+               class="btn btn-outline-secondary btn-sm flex-fill"
+               title="Open on YouTube">
+                <i class="bi bi-youtube"></i>
+            </a>
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm"
+                    @onclick="ShowDeleteConfirmation"
+                    disabled="@IsDeleting"
+                    title="Remove channel">
+                @if (IsDeleting)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                }
+                else
+                {
+                    <i class="bi bi-trash"></i>
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (ShowDeleteModal)
+{
+    <div class="modal show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                        Remove channel
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="HideDeleteConfirmation" disabled="@IsDeleting"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Remove <strong>@Channel.Title</strong>? Future polling stops; existing video rows stay.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="HideDeleteConfirmation" disabled="@IsDeleting">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete" disabled="@IsDeleting">
+                        @if (IsDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public ChannelDto Channel { get; set; } = default!;
+    [Parameter] public EventCallback<int> OnChannelDeleted { get; set; }
+
+    private bool ShowDeleteModal;
+    private bool IsDeleting;
+
+    private void ShowDeleteConfirmation() => ShowDeleteModal = true;
+    private void HideDeleteConfirmation() => ShowDeleteModal = false;
+
+    private async Task ConfirmDelete()
+    {
+        IsDeleting = true;
+        try
+        {
+            var ok = await ChannelService.RemoveAsync(Channel.Id);
+            if (ok)
+            {
+                await MessageCenter.ShowSuccessAsync($"Removed '{Channel.Title}'.");
+                ShowDeleteModal = false;
+                await OnChannelDeleted.InvokeAsync(Channel.Id);
+            }
+            else
+            {
+                await MessageCenter.ShowErrorAsync($"Couldn't remove '{Channel.Title}'.");
+            }
+        }
+        finally
+        {
+            IsDeleting = false;
+        }
+    }
+}

@@ -1,0 +1,56 @@
+@using SkipWatch.Services.Interfaces
+@using SkipWatch.Services.Models
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            Recent Messages
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        @if (_messages == null || !_messages.Any())
+        {
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                <small>No messages</small>
+            </div>
+        }
+        else
+        {
+            <ul class="list-unstyled mb-0">
+                @foreach (var message in _messages)
+                {
+                    <li class="message-item border-1 px-3 py-2 @(message != _messages.Last() ? "border-bottom" : "")">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-grow-1 message-content">
+                                <div class="message-text @GetTextColorClass(message.Type) small">
+                                    @message.GetFullMessage() - @message.CreatedAt.ToLocalTime().ToString("h:mm tt")
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<style>
+    .message-item {
+        transition: background-color 0.2s ease;
+    }
+
+    .message-item:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .message-content {
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .message-text {
+        line-height: 1.4;
+    }
+</style>

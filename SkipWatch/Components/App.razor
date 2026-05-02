@@ -1,0 +1,107 @@
+@* Components/App.razor *@
+
+<!DOCTYPE html>
+<html lang="en" @ServerThemeAttributes>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["SkipWatch.styles.css"]" />
+    <ImportMap />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet />
+    <script>
+        // Apply saved theme immediately to prevent FOUC. Light/dark only — default dark.
+        (function () {
+            try {
+                const saved = localStorage.getItem('skipwatch-theme');
+                const theme = saved === 'light' ? 'light' : 'dark';
+                const html = document.documentElement;
+                html.setAttribute('data-bs-theme', theme);
+                html.classList.remove('theme-light', 'theme-dark');
+                html.classList.add('theme-' + theme);
+            } catch (e) {
+                // localStorage unavailable — server-rendered cookie fallback handles this
+            }
+        })();
+
+        // Global theme setter, called by ThemeSelector buttons via inline onclick.
+        // Plain script so it works on SSR pages where Blazor interactivity isn't wired.
+        window.skipwatchSetTheme = function (theme) {
+            try {
+                if (theme !== 'light' && theme !== 'dark') theme = 'dark';
+                const KEY = 'skipwatch-theme';
+                const html = document.documentElement;
+                localStorage.setItem(KEY, theme);
+                document.cookie = KEY + '=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
+                html.setAttribute('data-bs-theme', theme);
+                html.classList.remove('theme-light', 'theme-dark');
+                html.classList.add('theme-' + theme);
+                window.dispatchEvent(new CustomEvent('themeChanged', { detail: theme }));
+            } catch (e) { }
+        };
+
+        // Called by ThemeSelector.OnAfterRenderAsync on interactive pages so the active
+        // checkmark stays in sync when the inline onclick path fires the themeChanged event.
+        window.skipwatchRegisterThemeListener = function (dotNetRef) {
+            window.addEventListener('themeChanged', function (e) {
+                dotNetRef.invokeMethodAsync('OnThemeChangedFromJs', e.detail);
+            });
+        };
+
+        // Re-apply theme after Blazor enhanced navigation patches the DOM.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Blazor !== 'undefined') {
+                Blazor.addEventListener('enhancedload', function () {
+                    const saved = localStorage.getItem('skipwatch-theme');
+                    const theme = saved === 'light' ? 'light' : 'dark';
+                    const html = document.documentElement;
+                    html.setAttribute('data-bs-theme', theme);
+                    html.classList.remove('theme-light', 'theme-dark');
+                    html.classList.add('theme-' + theme);
+                });
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <Routes />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    // Read theme from cookie so the server renders data-bs-theme on <html> directly.
+    // Avoids losing the theme after Blazor enhanced navigation patches the DOM without
+    // re-executing inline <script> tags.
+    private MarkupString ServerThemeAttributes
+    {
+        get
+        {
+            var theme = HttpContext.Request.Cookies.TryGetValue("skipwatch-theme", out var t) ? t : null;
+            // Only allow known values to prevent class injection via tampered cookie.
+            // Default to dark when missing/invalid.
+            return theme switch
+            {
+                "light" => new MarkupString("data-bs-theme=\"light\" class=\"theme-light\""),
+                _ => new MarkupString("data-bs-theme=\"dark\" class=\"theme-dark\"")
+            };
+        }
+    }
+}

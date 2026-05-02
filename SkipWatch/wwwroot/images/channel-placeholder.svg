@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="50" fill="#6c757d"/>
+
+  <!-- Person icon (Bootstrap person-circle style) -->
+  <g fill="#ffffff">
+    <!-- Head -->
+    <circle cx="50" cy="38" r="12"/>
+
+    <!-- Body -->
+    <path d="M 50 52
+             C 42 52, 30 54, 30 65
+             L 30 75
+             C 30 78, 32 80, 35 80
+             L 65 80
+             C 68 80, 70 78, 70 75
+             L 70 65
+             C 70 54, 58 52, 50 52 Z"/>
+  </g>
+</svg>
