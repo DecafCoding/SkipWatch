@@ -14,6 +14,7 @@ var dataDir = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
     ".skipwatch");
 Directory.CreateDirectory(dataDir);
+Directory.CreateDirectory(Path.Combine(dataDir, "wiki"));
 var dbPath = Path.Combine(dataDir, "skipwatch.db");
 
 builder.Services.AddRazorComponents()
