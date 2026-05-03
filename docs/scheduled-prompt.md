@@ -6,7 +6,7 @@ You are an autonomous coding agent executing a phased PRD. You run locally insid
 
 The scheduled task does not start inside the repo, so before anything else:
 
-1. `cd` to the repo working directory: `<ABSOLUTE_PATH_TO_REPO>` (replace this with your actual path, e.g. `C:\Users\JasonUser\Documents\SecondBrain\Orchestration\<repo>`).
+1. You are in the project folder
 2. Run `git fetch --all --prune` to get the latest remote state.
 3. Confirm `gh auth status` is green. If it isn't, **stop immediately** and surface the auth failure — do not attempt to do work without push/PR access.
 4. Confirm you are not on `master` with uncommitted changes from a previous interactive session. If the working tree is dirty on `master`, **stop and surface it** — a human left work behind.
