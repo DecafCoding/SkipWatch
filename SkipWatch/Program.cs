@@ -14,6 +14,7 @@ var dataDir = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
     ".skipwatch");
 Directory.CreateDirectory(dataDir);
+Directory.CreateDirectory(Path.Combine(dataDir, "wiki"));
 var dbPath = Path.Combine(dataDir, "skipwatch.db");
 
 builder.Services.AddRazorComponents()
@@ -65,6 +66,15 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Liveness probe. Touches no external dependency — safe to call from the launcher
+// script (Phase 7) before the worker pipeline has warmed up.
+app.MapGet("/health", () => Results.Json(new
+{
+    status = "ok",
+    version = typeof(Program).Assembly.GetName().Version?.ToString(),
+    utc = DateTime.UtcNow
+}));
 
 // H2 validation endpoint — resolves a channel and returns title + uploads-playlist ID.
 // One quota unit per call. Removed once H4 wires the channel-add UI.
@@ -123,3 +133,5 @@ app.MapGet("/debug/transcript/{videoId}", async (
 });
 
 app.Run();
+
+public partial class Program;

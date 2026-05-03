@@ -55,19 +55,19 @@ To skip a task entirely, change `[ ]` to `[~]`.
 - **Branch**: `phase-0-skeleton`
 - **Phase doc**: `docs/phases/phase-0-skeleton.md`
 - **Depends on**: No prior phases. Requires `dotnet 10` SDK locally and on the CI runner. Requires `gh` CLI for the final PR step.
-- **Status**: not started
+- **Status**: complete, PR #3
 - **Summary**: Close the remaining gaps in the SkipWatch project skeleton so every later phase has a stable foundation to build on.
 
 Tasks:
 
-- [ ] Task 1: CREATE `.editorconfig` at the SkipWatch repo root
-- [ ] Task 2: ADD `/health` minimal-API endpoint to `Program.cs`
-- [ ] Task 3: ADD `~/.skipwatch/wiki/` directory creation in `Program.cs`
-- [ ] Task 4: CREATE `SkipWatch.Tests` project and register it in `SkipWatch.slnx`
-- [ ] Task 5: CREATE `SkipWatch.Tests/Db/SkipWatchDbContextSmokeTests.cs`
-- [ ] Task 6: CREATE `SkipWatch.Tests/Web/HealthEndpointTests.cs`
-- [ ] Task 7: CREATE `.github/workflows/ci.yml`
-- [ ] Task 8: Commit, push, and open PR
+- [x] Task 1: CREATE `.editorconfig` at the SkipWatch repo root
+- [x] Task 2: ADD `/health` minimal-API endpoint to `Program.cs`
+- [x] Task 3: ADD `~/.skipwatch/wiki/` directory creation in `Program.cs`
+- [x] Task 4: CREATE `SkipWatch.Tests` project and register it in `SkipWatch.slnx`
+- [x] Task 5: CREATE `SkipWatch.Tests/Db/SkipWatchDbContextSmokeTests.cs`
+- [x] Task 6: CREATE `SkipWatch.Tests/Web/HealthEndpointTests.cs`
+- [x] Task 7: CREATE `.github/workflows/ci.yml`
+- [x] Task 8: Commit, push, and open PR
 
 ### Phase 1: Discovery round
 - **Branch**: _to be determined by `/plan-phase 1`_
