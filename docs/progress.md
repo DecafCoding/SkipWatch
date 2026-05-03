@@ -55,12 +55,12 @@ To skip a task entirely, change `[ ]` to `[~]`.
 - **Branch**: `phase-0-skeleton`
 - **Phase doc**: `docs/phases/phase-0-skeleton.md`
 - **Depends on**: No prior phases. Requires `dotnet 10` SDK locally and on the CI runner. Requires `gh` CLI for the final PR step.
-- **Status**: not started
+- **Status**: in progress
 - **Summary**: Close the remaining gaps in the SkipWatch project skeleton so every later phase has a stable foundation to build on.
 
 Tasks:
 
-- [ ] Task 1: CREATE `.editorconfig` at the SkipWatch repo root
+- [x] Task 1: CREATE `.editorconfig` at the SkipWatch repo root
 - [ ] Task 2: ADD `/health` minimal-API endpoint to `Program.cs`
 - [ ] Task 3: ADD `~/.skipwatch/wiki/` directory creation in `Program.cs`
 - [ ] Task 4: CREATE `SkipWatch.Tests` project and register it in `SkipWatch.slnx`
