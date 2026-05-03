@@ -16,7 +16,9 @@ If any of the above fails, stop and report what failed. Do not proceed.
 ## Your job on every run
 
 1. Read `progress.md` at the repo root.
-2. Find the **first task** that is unchecked (`[ ]`) AND has no `> Blocker:` line directly under it. Skip tasks marked `[~]`.
+2. Walk phases in ascending order. For the **first phase that is not `complete`**:
+   - If its `Status:` line reads `not planned`, **stop and write a blocker**. Edit `progress.md` to insert `> Blocker: phase needs a plan — run /plan-phase <N> then re-run.` directly under that phase's `Status:` line. There is no phase branch yet for an unplanned phase, so commit on `master` with message `blocker: phase <N> needs plan`, push, and stop. Do not pick up any task.
+   - Otherwise, find the **first task** in this phase that is unchecked (`[ ]`) AND has no `> Blocker:` line directly under it. Skip tasks marked `[~]`. If every task in this phase is `[x]` or `[~]` but the phase status hasn't been bumped to `complete`, that's a bookkeeping gap — move on to the next phase and let the human reconcile.
 3. Identify the phase the task belongs to. Read the corresponding phase doc — the path is in the phase header in `progress.md`.
 4. **Dependency gate.** Read this phase's `Depends on` field in `progress.md`:
    - If it says `none`, proceed.
@@ -45,11 +47,12 @@ If any of the above fails, stop and report what failed. Do not proceed.
 ## Stop conditions (priority order)
 
 1. Run-time setup failed (wrong directory, no gh auth, dirty `master`) → stop, surface the failure, do nothing else.
-2. Prior phase's PR is not yet merged to `master` → stop, write blocker on this phase's first task, no code commit.
-3. Validation fails twice → stop, write blocker, no code commit.
-4. Task description is ambiguous or contradicts the phase doc → stop, write blocker.
-5. Required dependency missing (env var, secret, package, external service) → stop, write blocker.
-6. Task complete → stop after commit and (if applicable) PR.
+2. Next eligible phase has `Status: not planned` → stop, write blocker under the phase's `Status:` line on `master`, no code commit.
+3. Prior phase's PR is not yet merged to `master` → stop, write blocker on this phase's first task, no code commit.
+4. Validation fails twice → stop, write blocker, no code commit.
+5. Task description is ambiguous or contradicts the phase doc → stop, write blocker.
+6. Required dependency missing (env var, secret, package, external service) → stop, write blocker.
+7. Task complete → stop after commit and (if applicable) PR.
 
 ## Blocker format
 
