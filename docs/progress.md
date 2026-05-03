@@ -64,7 +64,7 @@ Tasks:
 - [x] Task 2: ADD `/health` minimal-API endpoint to `Program.cs`
 - [x] Task 3: ADD `~/.skipwatch/wiki/` directory creation in `Program.cs`
 - [x] Task 4: CREATE `SkipWatch.Tests` project and register it in `SkipWatch.slnx`
-- [ ] Task 5: CREATE `SkipWatch.Tests/Db/SkipWatchDbContextSmokeTests.cs`
+- [x] Task 5: CREATE `SkipWatch.Tests/Db/SkipWatchDbContextSmokeTests.cs`
 - [ ] Task 6: CREATE `SkipWatch.Tests/Web/HealthEndpointTests.cs`
 - [ ] Task 7: CREATE `.github/workflows/ci.yml`
 - [ ] Task 8: Commit, push, and open PR
