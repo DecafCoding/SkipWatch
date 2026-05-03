@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="SkipWatch.Core/SkipWatch.Core.csproj" />
   <Project Path="SkipWatch/SkipWatch.csproj" />
+  <Project Path="SkipWatch.Tests/SkipWatch.Tests.csproj" />
 </Solution>
