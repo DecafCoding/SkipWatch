@@ -70,9 +70,23 @@ Tasks:
 - [x] Task 8: Commit, push, and open PR
 
 ### Phase 1: Discovery round
-- **Branch**: _to be determined by `/plan-phase 1`_
-- **Phase doc**: _none yet — run `/plan-phase 1`_
-- **Status**: not planned
+- **Branch**: `phase-1-discovery`
+- **Phase doc**: `docs/phases/phase-1-discovery.md`
+- **Depends on**: Phase 0 complete (test project, EF model, YouTube client, quota manager). New NuGet: `NCrontab` (Core project). No new external services.
+- **Status**: not started
+- **Summary**: Stand up the channel discovery loop described in PRD §6 Phase 1: a single hosted service (`CollectionRoundService`) that wakes on a configurable schedule, picks up to `CHANNELS_PER_ROUND` enabled channels not visited in the last 24 hours, and runs the two-call YouTube Data API harvest per channel.
+
+Tasks:
+
+- [ ] Task 1: CREATE `DiscoverySettings` and bind it in DI
+- [ ] Task 2: ADD `NCrontab` package + create `CronSchedule` helper
+- [ ] Task 3: EXTEND `IYouTubeApiService` with `ListUploadsPageAsync` and `GetVideoDetailsAsync`
+- [ ] Task 4: CREATE `IChannelDiscoveryRunner` + `ChannelDiscoveryRunner`
+- [ ] Task 5: CREATE `CollectionRoundService` (`BackgroundService`) in the host project
+- [ ] Task 6: WIRE DI in `Program.cs` and REMOVE the `/debug/yt/channel` endpoint
+- [ ] Task 7: CREATE `CronScheduleTests`
+- [ ] Task 8: CREATE `ChannelDiscoveryRunnerTests`
+- [ ] Task 9: Commit, push, and open PR
 
 ### Phase 1b: Topic discovery
 - **Branch**: _to be determined by `/plan-phase 1b`_
