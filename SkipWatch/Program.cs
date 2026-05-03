@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SkipWatch.Components;
 using SkipWatch.Core.Db;
+using SkipWatch.Core.Services.Discovery;
 using SkipWatch.Core.Services.Interfaces;
 using SkipWatch.Core.Services.Transcripts;
 using SkipWatch.Core.Services.YouTube;
@@ -29,6 +30,7 @@ builder.Services.AddDbContext<SkipWatchDbContext>(o =>
 // To set the API key in dev:  dotnet user-secrets set "YouTube:ApiKey" "AIza..."
 builder.Services.Configure<YouTubeApiSettings>(builder.Configuration.GetSection("YouTube"));
 builder.Services.Configure<ApifySettings>(builder.Configuration.GetSection("Apify"));
+builder.Services.Configure<DiscoverySettings>(builder.Configuration.GetSection("Discovery"));
 
 builder.Services.AddSingleton<IYouTubeQuotaManager, YouTubeQuotaManager>();
 builder.Services.AddSingleton<IYouTubeApiService, YouTubeApiService>();
@@ -41,6 +43,10 @@ builder.Services.AddScoped<SkipWatch.Features.Channels.Services.IChannelService,
     SkipWatch.Features.Channels.Services.ChannelService>();
 builder.Services.AddScoped<SkipWatch.Features.Topics.Services.ITopicService,
     SkipWatch.Features.Topics.Services.TopicService>();
+
+builder.Services.AddScoped<SkipWatch.Core.Services.Discovery.IChannelDiscoveryRunner,
+    SkipWatch.Core.Services.Discovery.ChannelDiscoveryRunner>();
+builder.Services.AddHostedService<SkipWatch.Services.Discovery.CollectionRoundService>();
 
 builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddSingleton<IMessageCenterService, MessageCenterService>();
@@ -75,36 +81,6 @@ app.MapGet("/health", () => Results.Json(new
     version = typeof(Program).Assembly.GetName().Version?.ToString(),
     utc = DateTime.UtcNow
 }));
-
-// H2 validation endpoint — resolves a channel and returns title + uploads-playlist ID.
-// One quota unit per call. Removed once H4 wires the channel-add UI.
-app.MapGet("/debug/yt/channel/{handleOrId}", async (
-    string handleOrId,
-    IYouTubeApiService yt,
-    IYouTubeQuotaManager quota,
-    CancellationToken ct) =>
-{
-    var info = await yt.GetChannelInfoAsync(handleOrId, ct);
-    var status = await quota.GetQuotaStatusAsync();
-
-    return Results.Json(new
-    {
-        info.Success,
-        info.CanonicalChannelId,
-        info.Title,
-        info.Handle,
-        info.ThumbnailUrl,
-        info.UploadsPlaylistId,
-        info.ErrorMessage,
-        info.IsQuotaExceeded,
-        Quota = new
-        {
-            status.Used,
-            status.DailyLimit,
-            status.NextReset
-        }
-    });
-});
 
 // H6 validation endpoint — calls Apify for one video and returns the timestamped transcript
 // plus the rich metadata. Costs one Apify run (~$0.005). Removed once Phase 2's

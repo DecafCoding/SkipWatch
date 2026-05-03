@@ -104,5 +104,124 @@ public class YouTubeApiService : IYouTubeApiService, IDisposable
     private static ChannelInfoResult Failure(string message) =>
         new(false, null, null, null, null, null, message, false);
 
+    public async Task<UploadsPageResult> ListUploadsPageAsync(
+        string uploadsPlaylistId,
+        int maxResults,
+        string? pageToken,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(uploadsPlaylistId))
+            return new UploadsPageResult(false, Array.Empty<UploadsPageItem>(), null,
+                "Uploads playlist ID is required", false);
+
+        if (!await _quotaManager.TryConsumeQuotaAsync(YouTubeApiOperation.GetPlaylistItems))
+            return new UploadsPageResult(false, Array.Empty<UploadsPageItem>(), null,
+                "YouTube API ceiling reached for today. Try again after UTC rollover.", true);
+
+        try
+        {
+            var request = _youTubeClient.PlaylistItems.List("snippet,contentDetails");
+            request.PlaylistId = uploadsPlaylistId;
+            request.MaxResults = maxResults;
+            request.PageToken = pageToken;
+            var response = await request.ExecuteAsync(ct);
+
+            var items = new List<UploadsPageItem>(response.Items?.Count ?? 0);
+            if (response.Items is not null)
+            {
+                foreach (var item in response.Items)
+                {
+                    var videoId = item.ContentDetails?.VideoId ?? item.Snippet?.ResourceId?.VideoId;
+                    if (string.IsNullOrEmpty(videoId)) continue;
+
+                    var publishedAt = item.ContentDetails?.VideoPublishedAtDateTimeOffset?.UtcDateTime
+                        ?? item.Snippet?.PublishedAtDateTimeOffset?.UtcDateTime
+                        ?? DateTime.UtcNow;
+
+                    var thumb = item.Snippet?.Thumbnails?.Default__?.Url
+                        ?? item.Snippet?.Thumbnails?.Medium?.Url
+                        ?? item.Snippet?.Thumbnails?.High?.Url;
+
+                    items.Add(new UploadsPageItem(
+                        videoId,
+                        item.Snippet?.Title ?? string.Empty,
+                        publishedAt,
+                        thumb));
+                }
+            }
+
+            return new UploadsPageResult(true, items, response.NextPageToken, null, false);
+        }
+        catch (Google.GoogleApiException gex)
+        {
+            _logger.LogError(gex, "YouTube API error listing uploads playlist '{PlaylistId}'", uploadsPlaylistId);
+            var quotaHit = gex.HttpStatusCode == System.Net.HttpStatusCode.Forbidden;
+            return new UploadsPageResult(false, Array.Empty<UploadsPageItem>(), null,
+                gex.Error?.Message ?? gex.Message, quotaHit);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error listing uploads playlist '{PlaylistId}'", uploadsPlaylistId);
+            return new UploadsPageResult(false, Array.Empty<UploadsPageItem>(), null, ex.Message, false);
+        }
+    }
+
+    public async Task<VideoDetailsResult> GetVideoDetailsAsync(
+        IReadOnlyCollection<string> videoIds,
+        CancellationToken ct = default)
+    {
+        if (videoIds is null || videoIds.Count == 0)
+            return new VideoDetailsResult(true, Array.Empty<VideoDetails>(), null, false);
+
+        if (!await _quotaManager.TryConsumeQuotaAsync(YouTubeApiOperation.GetVideoDetails))
+            return new VideoDetailsResult(false, Array.Empty<VideoDetails>(),
+                "YouTube API ceiling reached for today. Try again after UTC rollover.", true);
+
+        try
+        {
+            var request = _youTubeClient.Videos.List("contentDetails,statistics");
+            request.Id = string.Join(",", videoIds);
+            request.MaxResults = videoIds.Count;
+            var response = await request.ExecuteAsync(ct);
+
+            var items = new List<VideoDetails>(response.Items?.Count ?? 0);
+            if (response.Items is not null)
+            {
+                foreach (var item in response.Items)
+                {
+                    if (string.IsNullOrEmpty(item.Id)) continue;
+
+                    var seconds = DurationParser.ParseToSeconds(item.ContentDetails?.Duration);
+                    int? durationSeconds = seconds > 0 ? seconds : null;
+
+                    var stats = item.Statistics;
+                    items.Add(new VideoDetails(
+                        item.Id,
+                        durationSeconds,
+                        ToLong(stats?.ViewCount),
+                        ToLong(stats?.LikeCount),
+                        ToLong(stats?.CommentCount)));
+                }
+            }
+
+            return new VideoDetailsResult(true, items, null, false);
+        }
+        catch (Google.GoogleApiException gex)
+        {
+            _logger.LogError(gex, "YouTube API error fetching video details for {Count} id(s)", videoIds.Count);
+            var quotaHit = gex.HttpStatusCode == System.Net.HttpStatusCode.Forbidden;
+            return new VideoDetailsResult(false, Array.Empty<VideoDetails>(),
+                gex.Error?.Message ?? gex.Message, quotaHit);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error fetching video details for {Count} id(s)", videoIds.Count);
+            return new VideoDetailsResult(false, Array.Empty<VideoDetails>(), ex.Message, false);
+        }
+    }
+
+    private static long? ToLong(ulong? value) =>
+        value.HasValue && value.Value <= long.MaxValue ? (long)value.Value : null;
+
     public void Dispose() => _youTubeClient.Dispose();
 }
