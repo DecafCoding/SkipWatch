@@ -67,7 +67,7 @@ Tasks:
 - [x] Task 5: CREATE `SkipWatch.Tests/Db/SkipWatchDbContextSmokeTests.cs`
 - [x] Task 6: CREATE `SkipWatch.Tests/Web/HealthEndpointTests.cs`
 - [x] Task 7: CREATE `.github/workflows/ci.yml`
-- [ ] Task 8: Commit, push, and open PR
+- [x] Task 8: Commit, push, and open PR
 
 ### Phase 1: Discovery round
 - **Branch**: _to be determined by `/plan-phase 1`_
