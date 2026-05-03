@@ -55,7 +55,7 @@ To skip a task entirely, change `[ ]` to `[~]`.
 - **Branch**: `phase-0-skeleton`
 - **Phase doc**: `docs/phases/phase-0-skeleton.md`
 - **Depends on**: No prior phases. Requires `dotnet 10` SDK locally and on the CI runner. Requires `gh` CLI for the final PR step.
-- **Status**: in progress
+- **Status**: complete, PR #3
 - **Summary**: Close the remaining gaps in the SkipWatch project skeleton so every later phase has a stable foundation to build on.
 
 Tasks:
