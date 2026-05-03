@@ -66,7 +66,7 @@ Tasks:
 - [x] Task 4: CREATE `SkipWatch.Tests` project and register it in `SkipWatch.slnx`
 - [x] Task 5: CREATE `SkipWatch.Tests/Db/SkipWatchDbContextSmokeTests.cs`
 - [x] Task 6: CREATE `SkipWatch.Tests/Web/HealthEndpointTests.cs`
-- [ ] Task 7: CREATE `.github/workflows/ci.yml`
+- [x] Task 7: CREATE `.github/workflows/ci.yml`
 - [ ] Task 8: Commit, push, and open PR
 
 ### Phase 1: Discovery round

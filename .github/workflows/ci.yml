@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Restore packages
+        run: dotnet restore SkipWatch.slnx
+
+      - name: Format check
+        run: dotnet format SkipWatch.slnx --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build SkipWatch.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test SkipWatch.slnx --configuration Release --no-build --nologo
