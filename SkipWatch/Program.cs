@@ -31,6 +31,7 @@ builder.Services.AddDbContext<SkipWatchDbContext>(o =>
 builder.Services.Configure<YouTubeApiSettings>(builder.Configuration.GetSection("YouTube"));
 builder.Services.Configure<ApifySettings>(builder.Configuration.GetSection("Apify"));
 builder.Services.Configure<DiscoverySettings>(builder.Configuration.GetSection("Discovery"));
+builder.Services.Configure<TranscriptWorkerSettings>(builder.Configuration.GetSection("TranscriptWorker"));
 
 builder.Services.AddSingleton<IYouTubeQuotaManager, YouTubeQuotaManager>();
 builder.Services.AddSingleton<IYouTubeApiService, YouTubeApiService>();
@@ -46,7 +47,10 @@ builder.Services.AddScoped<SkipWatch.Features.Topics.Services.ITopicService,
 
 builder.Services.AddScoped<SkipWatch.Core.Services.Discovery.IChannelDiscoveryRunner,
     SkipWatch.Core.Services.Discovery.ChannelDiscoveryRunner>();
+builder.Services.AddScoped<SkipWatch.Core.Services.Transcripts.ITranscriptIngestRunner,
+    SkipWatch.Core.Services.Transcripts.TranscriptIngestRunner>();
 builder.Services.AddHostedService<SkipWatch.Services.Discovery.CollectionRoundService>();
+builder.Services.AddHostedService<SkipWatch.Services.Workers.TranscriptWorker>();
 
 builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddSingleton<IMessageCenterService, MessageCenterService>();
@@ -81,32 +85,6 @@ app.MapGet("/health", () => Results.Json(new
     version = typeof(Program).Assembly.GetName().Version?.ToString(),
     utc = DateTime.UtcNow
 }));
-
-// H6 validation endpoint — calls Apify for one video and returns the timestamped transcript
-// plus the rich metadata. Costs one Apify run (~$0.005). Removed once Phase 2's
-// TranscriptWorker is wired up.
-app.MapGet("/debug/transcript/{videoId}", async (
-    string videoId,
-    ITranscriptSource transcripts,
-    CancellationToken ct) =>
-{
-    var t = await transcripts.FetchAsync(videoId, ct);
-    return Results.Json(new
-    {
-        t.Success,
-        t.HasTranscript,
-        t.TranscriptLang,
-        t.DurationSeconds,
-        t.ViewCount,
-        t.LikeCount,
-        t.CommentsCount,
-        t.ThumbnailUrl,
-        t.ErrorMessage,
-        DescriptionPreview = t.Description?.Length > 200 ? t.Description[..200] + "..." : t.Description,
-        TranscriptPreview = t.TranscriptText?.Length > 1000 ? t.TranscriptText[..1000] + "..." : t.TranscriptText,
-        TranscriptLineCount = t.TranscriptText?.Split('\n').Length ?? 0
-    });
-});
 
 app.Run();
 
